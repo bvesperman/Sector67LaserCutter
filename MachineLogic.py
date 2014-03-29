@@ -12,6 +12,7 @@ import os
 import Adafruit_CharLCDPlate
 from Adafruit_I2C import Adafruit_I2C
 import locale
+import math
 
 class MachineLogic:
 
@@ -35,8 +36,8 @@ class MachineLogic:
     currentstate = "DISABLED"
     laseron = False
     laserstarttime = time.localtime()
-    lastlaserontime= time.localtime()
-    lastlaserofftime = time.localtime(time.mktime(time.localtime()) + 1000)
+    lastlaserontime= datetime.datetime.now()
+    lastlaserofftime = datetime.datetime.now() + datetime.timedelta(0,100000)
     
 
     LCDRefresh= False
@@ -72,8 +73,8 @@ class MachineLogic:
 
         self.currentstate = "DISABLED"
         self.laseron = False
-        self.laserstarttime = time.localtime()
-        self.lastlaserontime = time.localtime()
+        self.laserstarttime = datetime.datetime.now()
+        self.lastlaserontime = datetime.datetime.now()
         self.jobtime = 0
 
         
@@ -108,19 +109,20 @@ class MachineLogic:
             if io.input(self.LASERPIN) == 0 and self.laseron == False:
                 print("beam on")
                 self.laseron = True
-                self.laserstarttime = time.localtime()
+                self.laserstarttime = datetime.datetime.now()
             elif io.input(self.LASERPIN) == 1 and self.laseron == True:
                 self.laseron = False
                 print("beam off")
-                self.jobtime += ((time.mktime(time.localtime())- time.mktime(self.laserstarttime)))
-                self.lastlaserofftime = time.localtime()
-            elif io.input(self.LASERPIN) == 1 and self.laseron == False and time.mktime(time.localtime()) - time.mktime(self.lastlaserofftime) > self.MIN_REPORT_TIME:               
+                timelapse = (datetime.datetime.now()-self.laserstarttime)
+                self.jobtime += (float(timelapse.seconds) + float(timelapse.microseconds)/float(1000000))
+                self.lastlaserofftime = datetime.datetime.now()
+            elif io.input(self.LASERPIN) == 1 and self.laseron == False and self.jobtime > self.MIN_REPORT_TIME:               
                 print("job length of {0} seconds".format(self.jobtime))
-                self.CaptureImage()
+                #self.CaptureImage()
                 self.ReportJob()
-                self.lastlaserontime = time.localtime()
-                self.lastlaserofftime = time.localtime(time.mktime(time.localtime()) + 100000)
-                self.jobtime = 0
+                self.lastlaserontime = datetime.datetime.now()
+                self.lastlaserofftime = datetime.datetime.now() + datetime.timedelta(0,100000)
+                self.jobtime = 0.0
 
     def DoUnAuthorizedContinuousWork(self):
         self.CheckBeam()
@@ -137,7 +139,7 @@ class MachineLogic:
             print(self.currentstate)
 	    self.billingRFID = 0
 	    self.rfid = 0
-            self.jobtime = 0
+            self.jobtime = 0.0
             self.accruingDue = 0
             self.LCDRefresh = True
         elif self.currentstate == "DISABLED" :
