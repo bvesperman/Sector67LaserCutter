@@ -63,7 +63,7 @@ while True:
     #machine.CheckBeam()
 
 
-    time.sleep(.05)
+    time.sleep(.0001)
 
     if  time.time() > rebootTime and not machine.Busy():
         print("rebooting")

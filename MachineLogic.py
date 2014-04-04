@@ -25,6 +25,7 @@ class MachineLogic:
     DebugMode = False
     fullname= ''
     accruingDue = 0.0
+    linecuts = 0
 
     LASERPIN = 25    #// Laser power supply ACTIVE LOW
     LASERENABLEPIN1 = 23 #// Using two pins to trigger the relay to ensure enough current
@@ -115,14 +116,18 @@ class MachineLogic:
                 print("beam off")
                 timelapse = (datetime.datetime.now()-self.laserstarttime)
                 self.jobtime += (float(timelapse.seconds) + float(timelapse.microseconds)/float(1000000))
+                print(self.jobtime)
+                self.linecuts += 1
                 self.lastlaserofftime = datetime.datetime.now()
             elif io.input(self.LASERPIN) == 1 and self.laseron == False and self.jobtime > self.MIN_REPORT_TIME:               
                 print("job length of {0} seconds".format(self.jobtime))
                 #self.CaptureImage()
                 self.ReportJob()
+                print(self.linecuts)
                 self.lastlaserontime = datetime.datetime.now()
                 self.lastlaserofftime = datetime.datetime.now() + datetime.timedelta(0,100000)
                 self.jobtime = 0.0
+                self.linecuts = 0
 
     def DoUnAuthorizedContinuousWork(self):
         self.CheckBeam()
