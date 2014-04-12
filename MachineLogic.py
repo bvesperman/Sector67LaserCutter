@@ -30,6 +30,7 @@ class MachineLogic:
     LASERPIN = 25    #// Laser power supply ACTIVE LOW
     LASERENABLEPIN1 = 23 #// Using two pins to trigger the relay to ensure enough current
     LASERENABLEPIN2 = 24 #// Using two pins to trigger the relay to ensure enough current
+    LASERONPIN = 17
     JOB_END_TIME = 5 #//Time beam must be off before a job is ended and reported
     MIN_REPORT_TIME = 5 #//Minimum job length to generate a usage report
 
@@ -67,10 +68,11 @@ class MachineLogic:
         power_pin = 2
         pir_pin = 24
         io.setup(self.LASERPIN, io.IN) 
+        io.setup(self.LASERONPIN, io.IN) 
         io.setup(self.LASERENABLEPIN1, io.OUT)
         io.setup(self.LASERENABLEPIN2, io.OUT)
-        io.output(self.LASERENABLEPIN1, False)
-        io.output(self.LASERENABLEPIN2, False)
+        io.output(self.LASERENABLEPIN1, True)
+        io.output(self.LASERENABLEPIN2, True)
 
         self.currentstate = "DISABLED"
         self.laseron = False
@@ -107,7 +109,7 @@ class MachineLogic:
     def CheckBeam(self):
       
         if self.currentstate== "ENABLED":
-            if io.input(self.LASERPIN) == 0 and self.laseron == False:
+            if io.input(self.LASERPIN) == 0 and self.laseron == False and io.input(self.LASERONPIN)== 1 :
                 print("beam on")
                 self.laseron = True
                 self.laserstarttime = datetime.datetime.now()
@@ -119,7 +121,7 @@ class MachineLogic:
                 print(self.jobtime)
                 self.linecuts += 1
                 self.lastlaserofftime = datetime.datetime.now()
-            elif io.input(self.LASERPIN) == 1 and self.laseron == False and self.jobtime > self.MIN_REPORT_TIME:               
+            elif io.input(self.LASERPIN) == 1 and self.laseron == False and self.jobtime > self.MIN_REPORT_TIME and (datetime.datetime.now()-self.lastlaserofftime).seconds > 10:               
                 print("job length of {0} seconds".format(self.jobtime))
                 #self.CaptureImage()
                 self.ReportJob()
@@ -133,7 +135,17 @@ class MachineLogic:
         self.CheckBeam()
         self.UpdateLCD()
         self.CheckButton()
-        
+        if io.input(self.LASERONPIN)== 0 and self.currentstate <> "DISABLED":
+            self.isbusy = False
+            self.currentstate = "DISABLED"
+            io.output(self.LASERENABLEPIN1, True)
+            io.output(self.LASERENABLEPIN2, True)
+            print(self.currentstate)
+	    self.billingRFID = 0
+	    self.rfid = 0
+            self.jobtime = 0.0
+            self.accruingDue = 0
+            self.LCDRefresh = True        
                 
     def DoAuthorizedWork(self):
         if self.currentstate == "ENABLED" and self.laseron <> True:
