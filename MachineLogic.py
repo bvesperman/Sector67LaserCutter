@@ -182,8 +182,8 @@ class MachineLogic:
                 self.lcd.clear()
                 self.lcd.message("  Current User  \n" + self.fullname)
             elif self.currentstate== "DISABLED":
-                self.lcd.clear()
-                self.lcd.message("  Laser cutter  \n     Ready    ")
+                self.lcd.clear() "  Please Swipe  \n   RDIF Tag   ")
+                #self.lcd.message("  Laser cutter  \n     Ready    ")
 
             self.LCDRefresh = False
 
