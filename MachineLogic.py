@@ -37,10 +37,14 @@ class MachineLogic:
     state = [ "DISABLED",  "VERIFYING",  "ENABLED",  "ENROLLING"]
     currentstate = "DISABLED"
     laseron = False
+    laseroff1 = False
+    laseroff2 = False
+    laseroff3 = False
     laserstarttime = time.localtime()
     lastlaserontime= datetime.datetime.now()
-    lastlaserofftime = datetime.datetime.now() + datetime.timedelta(0,100000)
-    
+    lastlaserofftime = lastlaserontime #datetime.datetime.now()# + datetime.timedelta(0,100000)
+    jobRunning = False    
+    sleepTime = 0.05
 
     LCDRefresh= False
     
@@ -58,6 +62,20 @@ class MachineLogic:
            (lcd.UP    , 'Up'    ),
            (lcd.DOWN  , 'Down'  ),
            (lcd.RIGHT , 'Right' ))
+
+    laserArray =[False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False,
+       False,False,False,False,False,False,False,False,False,False]	
+    laserReadIndex = 0 
+     
+
     def Busy(self):
         return self.isbusy
     
@@ -77,10 +95,12 @@ class MachineLogic:
         self.currentstate = "DISABLED"
         self.laseron = False
         self.laserstarttime = datetime.datetime.now()
-        self.lastlaserontime = datetime.datetime.now()
+        self.lastlaserontime = self.laserstarttime 
+        self.lastlaserofftime = self.lastlaserontime
         self.jobtime = 0
+        self.jobRunning = False 
+        self.sleepTime = 0.05
 
-        
         self.lcd.begin(16, 2)	
         self.LCDRefresh = True
 
@@ -107,29 +127,50 @@ class MachineLogic:
 
 
     def CheckBeam(self):
-      
+
         if self.currentstate== "ENABLED":
             if io.input(self.LASERPIN) == 0 and self.laseron == False and io.input(self.LASERONPIN)== 1 :
                 print("beam on")
                 self.laseron = True
                 self.laserstarttime = datetime.datetime.now()
-            elif io.input(self.LASERPIN) == 1 and self.laseron == True:
-                self.laseron = False
-                print("beam off")
-                timelapse = (datetime.datetime.now()-self.laserstarttime)
-                self.jobtime += (float(timelapse.seconds) + float(timelapse.microseconds)/float(1000000))
-                print(self.jobtime)
-                self.linecuts += 1
-                self.lastlaserofftime = datetime.datetime.now()
-            elif io.input(self.LASERPIN) == 1 and self.laseron == False and self.jobtime > self.MIN_REPORT_TIME and (datetime.datetime.now()-self.lastlaserofftime).seconds > 10:               
-                print("job length of {0} seconds".format(self.jobtime))
+                self.jobRunning = True 
+                self.sleepTime = 0.05
+                self.laseroff1 = False
+                self.laseroff2 = False
+                self.laseroff3 = False
+            elif io.input(self.LASERPIN) == 0 and io.input(self.LASERONPIN)== 1 :
+                print("reset")
+                self.laseroff1 = False
+                self.laseroff2 = False
+                self.laseroff3 = False
+            elif io.input(self.LASERPIN) == 1 and self.laseron == True and self.laseroff1 == False:
+		self.laseroff1 = True
+                time.sleep(2)
+                print("stage1")
+            elif io.input(self.LASERPIN) == 1 and self.laseron == True and self.laseroff1 == True and self.laseroff2 == False:
+		self.laseroff2 = True
+                time.sleep(2)
+                print("stage2")
+            elif io.input(self.LASERPIN) == 1 and self.laseron == True and self.laseroff1 == True and self.laseroff2 == True and self.laseroff3 == False:
+		self.laseroff3 = True
+                time.sleep(2)
+                print("stage3")
+            #elif io.input(self.LASERPIN) == 1 and self.jobRunning == True and (datetime.datetime.now()-self.lastlaserofftime).seconds > self.MIN_REPORT_TIME:
+                #self.jobRunning = False
+            elif io.input(self.LASERPIN) == 1  and (datetime.datetime.now()-self.laserstarttime).seconds > self.MIN_REPORT_TIME and self.laseron == True and self.laseroff3 == True: # and (datetime.datetime.now()-self.laserstarttime).seconds > 5:               
+                self.sleepTime = 0.05
                 #self.CaptureImage()
+                self.laseron = False
+                timelapse = (datetime.datetime.now()-self.laserstarttime)
+                self.jobtime = (float(timelapse.seconds) + float(timelapse.microseconds)/float(1000000)) 
+                print("job length of {0} seconds".format(self.jobtime))
                 self.ReportJob()
-                print(self.linecuts)
+                #print(self.linecuts)
                 self.lastlaserontime = datetime.datetime.now()
-                self.lastlaserofftime = datetime.datetime.now() + datetime.timedelta(0,100000)
+                self.lastlaserofftime = self.lastlaserontime  #datetime.datetime.now() # + datetime.timedelta(0,100000)
                 self.jobtime = 0.0
                 self.linecuts = 0
+                self.jobRunning = False 
 
     def DoUnAuthorizedContinuousWork(self):
         self.CheckBeam()
@@ -159,6 +200,7 @@ class MachineLogic:
             self.jobtime = 0.0
             self.accruingDue = 0
             self.LCDRefresh = True
+            self.jobRunning = False 
         elif self.currentstate == "DISABLED" :
             self.isbusy = True
             self.currentstate = "ENABLED"
@@ -170,8 +212,10 @@ class MachineLogic:
             user = self.access.GetUserByRFID(self.rfid)
             self.fullname = user
             self.LCDRefresh = True
-
-            
+            self.laserstarttime = datetime.datetime.now()
+            self.lastlaserontime = self.laserstarttime 
+            self.lastlaserofftime = self.lastlaserontime
+            self.jobRunning = False 
 
     def UpdateLCD(self):
         if self.LCDRefresh == True:
