@@ -23,22 +23,26 @@ machine.Setup()
 authService = SectorAdminSite.SectorAdmin()
 access = RFIDDataAccess.DataAccess()
 
-try:
-   #Pull down the current list of authorized users
-   data = authService.GetAuthorizedUsers(machine.machineID)
+#try:
+#Pull down the current list of authorized users
+data = authService.GetAuthorizedUsers(machine.machineID)
 
-   #Delete Current Cache of Authorized users
-   access.DeleteAllAuthorizedUsers()
+#Delete Current Cache of Authorized users
+access.DeleteAllAuthorizedUsers()
 
    #authService.UpdateMachine(machineID)
 
    #add the users to the cache
-   for user in data:
-      access.InsertAuthorizedUser(user['RFID'],user['ID'],user['FirstName'] + ' ' +user['LastName'])  
+   #for user in data:
+      #access.InsertAuthorizedUser(user['RFID'],user['ID'],user['FirstName'] + ' ' +user['LastName'])  
 
-except:
-   rebootTime = time.time() + 60
-   print ('Exeception');
+for user in data["message"]:
+   #print (user["rfid"])
+   access.InsertAuthorizedUser(user["rfid"],0,user["display_name"]) 
+
+#except:
+#   rebootTime = time.time() + 60
+#   print ('Exeception');
   
 
 #loop forever
@@ -53,6 +57,7 @@ while True:
             #RFID has been swiped now check if authorized
 	    print(int(localRFID))    	    
             if access.IsRFIDAuthorized(int(localRFID)):
+               print('here')
 	       machine.rfid = int(localRFID)
 	       machine.DoAuthorizedWork()
 
@@ -63,7 +68,7 @@ while True:
     #machine.CheckBeam()
 
 
-    time.sleep(.0001)
+    time.sleep(machine.sleepTime)
 
     if  time.time() > rebootTime and not machine.Busy():
         print("rebooting")

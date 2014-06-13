@@ -20,7 +20,7 @@ class MachineLogic:
     prevRFID = 0
     billingRFID = 0
     cashRFID = 7898934
-    machineID = 4
+    machineID = 1 #4
     isbusy = False
     DebugMode = False
     fullname= ''
@@ -63,16 +63,26 @@ class MachineLogic:
            (lcd.DOWN  , 'Down'  ),
            (lcd.RIGHT , 'Right' ))
 
-    laserArray =[False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False,
-       False,False,False,False,False,False,False,False,False,False]	
+    laserArray =[0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0,
+       0,0,0,0,0,0,0,0,0,0]	
     laserReadIndex = 0 
      
 
@@ -116,9 +126,9 @@ class MachineLogic:
         jpgfile = open(newest).read()
         amount = self.authService.AddMachinePayment(int(self.billingRFID),self.jobtime,self.machineID, 'Laser cut time for {0}'.format(self.jobtime),jpgfile)
         
-        print("{0:0.2f}".format(float(amount)))
-        self.accruingDue += float(amount)
-        self.LCDRefresh = True
+        #print("{0:0.2f}".format(float(amount)))
+        #self.accruingDue += float(amount)
+        #self.LCDRefresh = True
             
     
     def CaptureImage(self):
@@ -135,34 +145,31 @@ class MachineLogic:
                 self.laserstarttime = datetime.datetime.now()
                 self.jobRunning = True 
                 self.sleepTime = 0.05
-                self.laseroff1 = False
-                self.laseroff2 = False
-                self.laseroff3 = False
-            elif io.input(self.LASERPIN) == 0 and io.input(self.LASERONPIN)== 1 :
-                print("reset")
-                self.laseroff1 = False
-                self.laseroff2 = False
-                self.laseroff3 = False
-            elif io.input(self.LASERPIN) == 1 and self.laseron == True and self.laseroff1 == False:
-		self.laseroff1 = True
-                time.sleep(2)
-                print("stage1")
-            elif io.input(self.LASERPIN) == 1 and self.laseron == True and self.laseroff1 == True and self.laseroff2 == False:
-		self.laseroff2 = True
-                time.sleep(2)
-                print("stage2")
-            elif io.input(self.LASERPIN) == 1 and self.laseron == True and self.laseroff1 == True and self.laseroff2 == True and self.laseroff3 == False:
-		self.laseroff3 = True
-                time.sleep(2)
-                print("stage3")
-            #elif io.input(self.LASERPIN) == 1 and self.jobRunning == True and (datetime.datetime.now()-self.lastlaserofftime).seconds > self.MIN_REPORT_TIME:
-                #self.jobRunning = False
-            elif io.input(self.LASERPIN) == 1  and (datetime.datetime.now()-self.laserstarttime).seconds > self.MIN_REPORT_TIME and self.laseron == True and self.laseroff3 == True: # and (datetime.datetime.now()-self.laserstarttime).seconds > 5:               
+		self.laserReadIndex = 0 
+                self.laserArray[self.laserReadIndex] = 1
+                self.laserReadIndex += 1 
+
+            elif io.input(self.LASERPIN) == 0 and self.laseron == True and sum(self.laserArray) <> 0:
+                print(sum(self.laserArray))
+		self.laserArray[self.laserReadIndex] = 1
+                self.laserReadIndex += 1
+                print('setting {0} value {1}'.format(self.laserReadIndex, 1))
+                if self.laserReadIndex == 200:
+                   self.laserReadIndex = 0 
+
+            elif io.input(self.LASERPIN) == 1 and self.laseron == True and sum(self.laserArray) <> 0:
+		self.laserArray[self.laserReadIndex] = 0
+                self.laserReadIndex += 1
+                print('setting {0} value {1}'.format(self.laserReadIndex, 0))
+                if self.laserReadIndex == 200:
+                   self.laserReadIndex = 0 
+
+            elif io.input(self.LASERPIN) == 1  and (datetime.datetime.now()-self.laserstarttime).seconds > self.MIN_REPORT_TIME and self.laseron == True and sum(self.laserArray) == 0: # and (datetime.datetime.now()-self.laserstarttime).seconds > 5:               
                 self.sleepTime = 0.05
                 #self.CaptureImage()
                 self.laseron = False
                 timelapse = (datetime.datetime.now()-self.laserstarttime)
-                self.jobtime = (float(timelapse.seconds) + float(timelapse.microseconds)/float(1000000)) 
+                self.jobtime = (float(timelapse.seconds) + float(timelapse.microseconds)/float(1000000)) - 10
                 print("job length of {0} seconds".format(self.jobtime))
                 self.ReportJob()
                 #print(self.linecuts)
@@ -176,7 +183,10 @@ class MachineLogic:
         self.CheckBeam()
         self.UpdateLCD()
         self.CheckButton()
-        if io.input(self.LASERONPIN)== 0 and self.currentstate <> "DISABLED":
+        if io.input(self.LASERONPIN)== 1 and self.currentstate == "DISABLED":
+            self.currentstate = "ON"
+            self.LCDRefresh = True 
+        elif io.input(self.LASERONPIN)== 0 and self.currentstate == "ENABLED":
             self.isbusy = False
             self.currentstate = "DISABLED"
             io.output(self.LASERENABLEPIN1, True)
@@ -188,20 +198,10 @@ class MachineLogic:
             self.accruingDue = 0
             self.LCDRefresh = True        
                 
+        #print(self.currentstate)
+
     def DoAuthorizedWork(self):
-        if self.currentstate == "ENABLED" and self.laseron <> True:
-            self.isbusy = False
-            self.currentstate = "DISABLED"
-            io.output(self.LASERENABLEPIN1, True)
-            io.output(self.LASERENABLEPIN2, True)
-            print(self.currentstate)
-	    self.billingRFID = 0
-	    self.rfid = 0
-            self.jobtime = 0.0
-            self.accruingDue = 0
-            self.LCDRefresh = True
-            self.jobRunning = False 
-        elif self.currentstate == "DISABLED" :
+        if self.currentstate == "ON" :
             self.isbusy = True
             self.currentstate = "ENABLED"
             io.output(self.LASERENABLEPIN1, False)
@@ -216,6 +216,19 @@ class MachineLogic:
             self.lastlaserontime = self.laserstarttime 
             self.lastlaserofftime = self.lastlaserontime
             self.jobRunning = False 
+        elif self.currentstate == "ENABLED" and self.laseron <> True:
+            self.isbusy = False
+            self.currentstate = "ON"
+            io.output(self.LASERENABLEPIN1, True)
+            io.output(self.LASERENABLEPIN2, True)
+            print(self.currentstate)
+	    self.billingRFID = 0
+	    self.rfid = 0
+            self.jobtime = 0.0
+            self.accruingDue = 0
+            self.LCDRefresh = True
+            self.jobRunning = False 
+
 
     def UpdateLCD(self):
         if self.LCDRefresh == True:
@@ -225,9 +238,13 @@ class MachineLogic:
             elif self.currentstate== "ENABLED":
                 self.lcd.clear()
                 self.lcd.message("  Current User  \n" + self.fullname)
-            elif self.currentstate== "DISABLED":
+            elif self.currentstate== "ON":
                 self.lcd.clear() 
                 self.lcd.message("  Please Swipe  \n    RFID Tag   ")
+            elif self.currentstate== "DISABLED":
+                self.lcd.clear() 
+                self.lcd.message("  Please Turn  \n  On Machine ")
+                #self.lcd.message("  Please Swipe  \n    RFID Tag   ")
                 #self.lcd.message("  Laser cutter  \n     Ready    ")
 
 
