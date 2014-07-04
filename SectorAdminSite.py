@@ -52,8 +52,9 @@ class SectorAdmin:
 
 
     def AddMachinePayment ( self, RFID, Amount, MachineID, Description, Image):
-        requests.post('http://www.sector67.org/blog/api/machine/log_machine_usage/?machine_id={0}&unit={1}&rfid={2}'.format(MachineID, Amount, RFID))
+        response = requests.post('http://www.sector67.org/blog/api/machine/log_machine_usage/?machine_id={0}&unit={1}&rfid={2}'.format(MachineID, Amount, RFID))
  	print('http://www.sector67.org/blog/api/machine/log_machine_usage/?machine_id={0}&unit={1}&rfid={2}'.format(MachineID, Amount, RFID))
+        return response.json()["message"]["charge"]
  	#url = "https://www.pinsoft.net/sectorbilling/payments.asmx?wsdl"
 	#client = Client(url)
 	#data = client.service.AddMachinePayment(RFID,Amount,MachineID, Description, 0)
