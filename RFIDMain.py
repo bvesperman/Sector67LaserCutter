@@ -38,7 +38,7 @@ access.DeleteAllAuthorizedUsers()
 
 for user in data["message"]:
    #print (user["rfid"])
-   access.InsertAuthorizedUser(user["rfid"],0,user["display_name"]) 
+   access.InsertAuthorizedUser(int(user["rfid"]),0,user["display_name"]) 
 
 #except:
 #   rebootTime = time.time() + 60

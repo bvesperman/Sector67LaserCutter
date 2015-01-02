@@ -127,8 +127,8 @@ class MachineLogic:
         amount = self.authService.AddMachinePayment(int(self.billingRFID),self.jobtime,self.machineID, 'Laser cut time for {0}'.format(self.jobtime),jpgfile)
         
         #print("{0:0.2f}".format(float(amount)))
-        #self.accruingDue += float(amount)
-        #self.LCDRefresh = True
+        self.accruingDue += float(amount)
+        self.LCDRefresh = True
             
     
     def CaptureImage(self):
@@ -209,6 +209,9 @@ class MachineLogic:
             print(self.currentstate)
 	    self.billingRFID = self.rfid
             self.accruingDue = 0
+            self.lcd.clear()
+            #self.lcd.message("  Current User  \n" + self.fullname)
+            self.lcd.message("     Please     \n       Wait     ")
             user = self.access.GetUserByRFID(self.rfid)
             self.fullname = user
             self.LCDRefresh = True
@@ -265,7 +268,7 @@ class MachineLogic:
            #else :
               self.fullname = ''
 	      data = self.authService.GetUserByRFID(rfid)            
-              self.fullname = data['FirstName'] + ' ' +data['LastName']
+              self.fullname = data
               print(self.fullname)
               self.billingRFID = rfid
               
