@@ -66,25 +66,27 @@ class MachineLogic:
     laserArray =[0,0,0,0,0,0,0,0,0,0,
        0,0,0,0,0,0,0,0,0,0,
        0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
-       0,0,0,0,0,0,0,0,0,0,
        0,0,0,0,0,0,0,0,0,0]	
     laserReadIndex = 0 
      
+       #
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
+       #0,0,0,0,0,0,0,0,0,0,
 
     def Busy(self):
         return self.isbusy
@@ -124,7 +126,12 @@ class MachineLogic:
         newest = max(glob.iglob('/home/pi/ImageLog/*.jpg'), key=os.path.getctime)
         print(newest)
         jpgfile = open(newest).read()
-        amount = self.authService.AddMachinePayment(int(self.billingRFID),self.jobtime,self.machineID, 'Laser cut time for {0}'.format(self.jobtime),jpgfile)
+   	amount = 0
+
+	try:
+           amount = self.authService.AddMachinePayment(int(self.billingRFID),self.jobtime,self.machineID, 'Laser cut time for {0}'.format(self.jobtime),jpgfile)
+        except:
+	   print('internet connection failed')
         
         #print("{0:0.2f}".format(float(amount)))
         self.accruingDue += float(amount)
@@ -154,14 +161,14 @@ class MachineLogic:
 		self.laserArray[self.laserReadIndex] = 1
                 self.laserReadIndex += 1
                 print('setting {0} value {1}'.format(self.laserReadIndex, 1))
-                if self.laserReadIndex == 200:
+                if self.laserReadIndex == 40:
                    self.laserReadIndex = 0 
 
             elif io.input(self.LASERPIN) == 1 and self.laseron == True and sum(self.laserArray) <> 0:
 		self.laserArray[self.laserReadIndex] = 0
                 self.laserReadIndex += 1
                 print('setting {0} value {1}'.format(self.laserReadIndex, 0))
-                if self.laserReadIndex == 200:
+                if self.laserReadIndex == 40:
                    self.laserReadIndex = 0 
 
             elif io.input(self.LASERPIN) == 1  and (datetime.datetime.now()-self.laserstarttime).seconds > self.MIN_REPORT_TIME and self.laseron == True and sum(self.laserArray) == 0: # and (datetime.datetime.now()-self.laserstarttime).seconds > 5:               
@@ -197,7 +204,14 @@ class MachineLogic:
             self.jobtime = 0.0
             self.accruingDue = 0
             self.LCDRefresh = True        
-                
+
+        self.lcd.setCursor(15,0)
+	self.lcd.message('0')
+	time.sleep(0.1)
+        self.lcd.setCursor(15,0)
+	self.lcd.message('-')
+	time.sleep(0.1)    
+            
         #print(self.currentstate)
 
     def DoAuthorizedWork(self):
@@ -267,11 +281,14 @@ class MachineLogic:
            #   self.lcd.message("  Current User  \n      Cash")
            #else :
               self.fullname = ''
-	      data = self.authService.GetUserByRFID(rfid)            
-              self.fullname = data
-              print(self.fullname)
-              self.billingRFID = rfid
-              
+	      try:
+	      	data = self.authService.GetUserByRFID(rfid)            
+              	self.fullname = data
+              	print(self.fullname)
+              	self.billingRFID = rfid
+              except:
+		print('cannot add billing user')
+
               self.LCDRefresh = True
               #self.lcd.clear()
               #self.lcd.message("  Current User  \n" + self.fullname)

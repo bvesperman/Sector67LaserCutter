@@ -64,7 +64,11 @@ class SectorAdmin:
 
     def GetUserByRFID(self,RFID):
         response = requests.post('http://www.sector67.org/blog/api/user/get_user_for_rfid/?rfid={0}'.format(RFID))
-        return response.json()["message"]["display_name"]
+        if len(response.json()["message"]["display_name"]) != 0 :
+           return response.json()["message"]["display_name"]
+        else:
+	   response.json()["message"]["user_logins"]
+
  	#url = "https://www.pinsoft.net/sectorbilling/payments.asmx?wsdl"
 	#client = Client(url)
 	#data = client.service.GetUserByRFIDForPI(RFID)
