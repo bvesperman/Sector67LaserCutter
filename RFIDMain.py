@@ -24,8 +24,13 @@ authService = SectorAdminSite.SectorAdmin()
 access = RFIDDataAccess.DataAccess()
 
 try:
+   print("sleep for internet connection")
+   time.sleep(10);
+
    #Pull down the current list of authorized users
    data = authService.GetAuthorizedUsers(machine.machineID)
+
+
     
    print('adding users to database')
    #Delete Current Cache of Authorized users
@@ -41,10 +46,11 @@ try:
    #print (user["rfid"])
       access.InsertAuthorizedUser(int(user["rfid"]),0,user["display_name"]) 
 
-except:
+   print('after adding users to DB')
+except Exception as e:
 #   rebootTime = time.time() + 60
-   print ('Exeception');
-  
+   #print ('Exeception ');
+   print (getattr(e, 'message', repr(e)))
 
 #loop forever
 while True:
@@ -52,6 +58,7 @@ while True:
     # read the standard input to see if the RFID has been swiped
     while sys.stdin in select.select([sys.stdin],[],[],0)[0]:
         localRFID = sys.stdin.readline()
+	
         if localRFID:
             localRFID = ''.join(localRFID.splitlines())
 
@@ -60,6 +67,7 @@ while True:
             if access.IsRFIDAuthorized(int(localRFID)):
                print('here')
 	       machine.rfid = int(localRFID)
+               machine.SetBillingAccount(int(localRFID))
 	       machine.DoAuthorizedWork()
 
             else:

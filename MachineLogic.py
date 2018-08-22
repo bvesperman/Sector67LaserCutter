@@ -123,13 +123,13 @@ class MachineLogic:
     #// If a job has recently ended, report it
     def ReportJob(self):
         
-        newest = max(glob.iglob('/home/pi/ImageLog/*.jpg'), key=os.path.getctime)
-        print(newest)
-        jpgfile = open(newest).read()
+        #newest = max(glob.iglob('/home/pi/ImageLog/*.jpg'), key=os.path.getctime)
+        #print(newest)
+        #jpgfile = open(newest).read()
    	amount = 0
 
 	try:
-           amount = self.authService.AddMachinePayment(int(self.billingRFID),self.jobtime,self.machineID, 'Laser cut time for {0}'.format(self.jobtime),jpgfile)
+           amount = self.authService.AddMachinePayment(int(self.billingRFID),self.jobtime,self.machineID, 'Laser cut time for {0}'.format(self.jobtime), '')
         except:
 	   print('internet connection failed')
         
@@ -227,7 +227,7 @@ class MachineLogic:
             #self.lcd.message("  Current User  \n" + self.fullname)
             self.lcd.message("     Please     \n       Wait     ")
             user = self.access.GetUserByRFID(self.rfid)
-            self.fullname = user
+            #self.fullname = user
             self.LCDRefresh = True
             self.laserstarttime = datetime.datetime.now()
             self.lastlaserontime = self.laserstarttime 
@@ -254,6 +254,7 @@ class MachineLogic:
                 self.lcd.message("Due:$" + "{0:0.2f}".format(float(self.accruingDue))  + "\n" + self.fullname)
             elif self.currentstate== "ENABLED":
                 self.lcd.clear()
+                print(self.billingRFID)
                 self.lcd.message("  Current User  \n" + self.fullname)
             elif self.currentstate== "ON":
                 self.lcd.clear() 
@@ -273,7 +274,7 @@ class MachineLogic:
 
 
     def SetBillingAccount(self, rfid):
-        if self.currentstate == "ENABLED" and self.laseron <> True:
+        #if self.currentstate == "ENABLED" and self.laseron <> True:
            #if self.cashRFID == rfid:
            #   self.fullname ="Cash"
            #   self.billingRFID = rfid
